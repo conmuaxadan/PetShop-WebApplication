@@ -1,0 +1,43 @@
+GHTK_STAGING_URL: "https://services-staging.ghtklab.com/services/shipment"
+GHTK_PRODUCTION_URL: "https://services.giaohangtietkiem.vn/services/shipment"
+GHTK_STAGING_TOKEN: "7DaVEYU1SvX18oP0wzY9bsBsbcc4rymyogAU92"
+GHTK_PRODUCTION_TOKEN: "1ESY9nbQQ1wvSbfKxpJ3exXwRZJdsXBVmStoQ3W"
+GHTK_PARTNER_CODE: "S21957308"
+order:
+  pick-name: "Phạm Lê Đạt"
+  pick-address: "Minh Long, Chơn Thành, Bình Phước"
+  pick-province: "Bình Phước"
+  pick-district: "Chơn Thành"
+  pick-ward: "Minh Long"
+  pick-tel: "0909123456"
+  tags: [0]
+  deliver_option: ""
+
+server:
+  port: 8087
+  servlet:
+    context-path: /shipping
+spring:
+  kafka:
+    bootstrap-servers: localhost:9094
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  application:
+    name: shipping-service
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: "jdbc:mysql://localhost:3306/shipping_service"
+    username: "root"
+    password: "root"
