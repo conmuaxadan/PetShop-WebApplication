@@ -19,7 +19,6 @@ import DataTable from '../components/DataTable';
 import ProductModal from '../components/ProductModal';
 import categoryService from '../service/category-service';
 import productServiceClass from '../service/product-service';
-import weightTypeService from '../service/weightType-service';
 import Badge from '../ui/badge';
 import {useNavigate} from "react-router-dom";
 
@@ -128,141 +127,6 @@ const CategoryModal = ({ isOpen, onClose, onCategoryCreated }) => {
   );
 };
 
-const WeightTypeModal = ({ isOpen, onClose, onWeightTypeCreated }) => {
-  const [value, setValue] = useState('');
-  const [unit, setUnit] = useState('');
-  const [errors, setErrors] = useState({});
-  const [weightTypes, setWeightTypes] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      const fetchWeightTypes = async () => {
-        setLoading(true);
-        try {
-          const response = await weightTypeService.getAllWeightTypes(1, 99999, '');
-          setWeightTypes(response.content || []);
-        } catch (error) {
-          toast.error('Lỗi khi tải loại trọng lượng', { position: 'top-right' });
-        }
-        setLoading(false);
-      };
-      fetchWeightTypes();
-    }
-  }, [isOpen]);
-
-  const handleSubmit = async () => {
-    const newErrors = {};
-    if (!value || isNaN(value) || value <= 0) {
-      newErrors.value = 'Giá trị phải là số lớn hơn 0';
-    }
-    if (!unit.trim()) {
-      newErrors.unit = 'Đơn vị là bắt buộc';
-    }
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-
-    setLoading(true);
-    try {
-      const newWeightType = await weightTypeService.createWeightType(parseFloat(value), unit);
-      if (newWeightType) {
-        setWeightTypes([...weightTypes, newWeightType]);
-        setValue('');
-        setUnit('');
-        setErrors({});
-        onWeightTypeCreated(newWeightType);
-      }
-    } catch (error) {
-      setErrors({ general: 'Lỗi khi tạo loại trọng lượng' });
-    }
-    setLoading(false);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 w-full max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Quản lý loại trọng lượng</h2>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium">Giá trị</label>
-                <input
-                    type="number"
-                    value={value}
-                    onChange={(e) => {
-                      setValue(e.target.value);
-                      setErrors((prev) => ({ ...prev, value: '' }));
-                    }}
-                    className={`w-full mt-1 p-2 border ${errors.value ? 'border-red-500' : 'border-gray-300'} rounded`}
-                    placeholder="Nhập giá trị (e.g., 1)"
-                    min="0"
-                    step="0.01"
-                />
-                {errors.value && <p className="text-red-500 text-sm mt-1">{errors.value}</p>}
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium">Đơn vị</label>
-                <input
-                    type="text"
-                    value={unit}
-                    onChange={(e) => {
-                      setUnit(e.target.value);
-                      setErrors((prev) => ({ ...prev, unit: '' }));
-                    }}
-                    className={`w-full mt-1 p-2 border ${errors.unit ? 'border-red-500' : 'border-gray-300'} rounded`}
-                    placeholder="Nhập đơn vị (e.g., kg)"
-                />
-                {errors.unit && <p className="text-red-500 text-sm mt-1">{errors.unit}</p>}
-              </div>
-            </div>
-            {errors.general && <p className="text-red-500 text-sm">{errors.general}</p>}
-            <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              Thêm loại trọng lượng
-            </button>
-          </div>
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-2">Danh sách loại trọng lượng</h3>
-            {loading ? (
-                <p>Đang tải...</p>
-            ) : weightTypes.length === 0 ? (
-                <p>Không có loại trọng lượng</p>
-            ) : (
-                <table className="w-full border-collapse">
-                  <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border p-2 text-left">ID</th>
-                    <th className="border p-2 text-left">Giá trị</th>
-                    <th className="border p-2 text-left">Đơn vị</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {weightTypes.map((wt) => (
-                      <tr key={wt.id_weight_type} className="border-b">
-                        <td className="border p-2">{wt.id_weight_type}</td>
-                        <td className="border p-2">{wt.value}</td>
-                        <td className="border p-2">{wt.unit}</td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table>
-            )}
-          </div>
-        </div>
-      </div>
-  );
-};
-
 const Products = () => {
   const navigate = useNavigate();
   const productService = new productServiceClass(navigate);
@@ -277,13 +141,11 @@ const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isWeightTypeModalOpen, setIsWeightTypeModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalMode, setModalMode] = useState('add');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categories, setCategories] = useState([]);
-  const [weightTypes, setWeightTypes] = useState([]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -330,19 +192,11 @@ const Products = () => {
     }
   };
 
-  const fetchWeightTypes = async () => {
-    try {
-      const response = await weightTypeService.getAllWeightTypes(1, 99999, '');
-      setWeightTypes(response.content || []);
-    } catch (error) {
-      toast.error('Lỗi khi tải loại trọng lượng', { position: 'top-right' });
-    }
-  };
 
   useEffect(() => {
      fetchProducts();
     fetchCategories();
-    fetchWeightTypes();
+
   }, [pageResponse.page, pageResponse.size, searchTerm]);
 
   const filteredProducts = (Array.isArray(pageResponse.content) ? pageResponse.content : []).filter((product) => {
@@ -391,16 +245,16 @@ const Products = () => {
     setSelectedProduct(null);
   };
 
-  const handleSaveProduct = async ({ productData, file }) => {
+  const handleSaveProduct = async ({ productData, files}) => {
     if (!modalMode) return;
     setLoading(true);
     try {
-      console.log('Saving product:', JSON.stringify(productData, null, 2), 'File:', file);
+      console.log('Saving product:', JSON.stringify(productData, null, 2), 'File:', files);
       if (modalMode === 'add') {
-        await productService.createProduct({ productData, file });
+        await productService.createProduct({ productData, files });
         toast.success('Tạo sản phẩm thành công', { position: 'top-right' });
       } else if (modalMode === 'edit') {
-        await productService.updateProduct(selectedProduct.id_product, { productData, file });
+        await productService.updateProduct(selectedProduct.id_product, { productData, files });
         toast.success('Cập nhật sản phẩm thành công', { position: 'top-right' });
       }
       await fetchProducts();
@@ -466,10 +320,6 @@ const Products = () => {
     setCategories((prev) => [...prev, newCategory]);
   };
 
-  const handleWeightTypeCreated = (newWeightType) => {
-    setWeightTypes((prev) => [...prev, newWeightType]);
-  };
-
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pageResponse.totalPages) {
       setPageResponse((prev) => ({ ...prev, page: newPage }));
@@ -482,13 +332,13 @@ const Products = () => {
 
   const columnHelper = createColumnHelper();
   const columns = [
-    columnHelper.accessor('image', {
+    columnHelper.accessor('images', {
       header: 'Hình ảnh',
       cell: (info) => (
           <div className="flex items-center">
             {info.getValue() ? (
                 <img
-                    src={info.getValue()}
+                    src={info.getValue()[0]}
                     alt="Product"
                     className="w-10 h-10 object-cover rounded"
                     onError={(e) => (e.target.src = 'https://placehold.co/40x40')}
@@ -612,14 +462,8 @@ const Products = () => {
                   <PlusCircle className="w-4 h-4 mr-2" />
                   Thêm danh mục
                 </button>
-                <button
-                    onClick={() => setIsWeightTypeModalOpen(true)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
-                    disabled={loading}
-                >
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Thêm loại trọng lượng
-                </button>
+
+                 
                 <button
                     onClick={() => openModal('add')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
@@ -692,7 +536,6 @@ const Products = () => {
             product={selectedProduct}
             onSave={handleSaveProduct}
             categories={categories}
-            weightTypes={weightTypes}
         />
 
         <CategoryModal
@@ -701,11 +544,6 @@ const Products = () => {
             onCategoryCreated={handleCategoryCreated}
         />
 
-        <WeightTypeModal
-            isOpen={isWeightTypeModalOpen}
-            onClose={() => setIsWeightTypeModalOpen(false)}
-            onWeightTypeCreated={handleWeightTypeCreated}
-        />
 
         {isDeleteModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -30,7 +30,6 @@ class ProductService {
                     toast.error("Bạn không có quyền truy cập tài nguyên này!", {
                         position: "top-right",
                     });
-
                     window.location.href = "/403";
                 }
                 return Promise.reject(error);
@@ -38,11 +37,10 @@ class ProductService {
         );
     }
 
-    // Updated getAllProducts to include searchTerm
     async getAllProducts(page = 1, size = 10, searchTerm = "") {
         try {
             const response = await this.api.get("", {
-                params: { page, size, keyword: searchTerm }, // Pass searchTerm as keyword
+                params: { page, size, keyword: searchTerm },
             });
             console.log("Get Products Response:", response);
             if (response.status === 200 && response.data.code === 0) {
@@ -93,66 +91,119 @@ class ProductService {
         }
     }
 
-    async createProduct({ productData, file }) {
+    async createProduct({ productData, files }) {
         try {
-            if (!productData || !file) {
-                throw new Error("productData and file are required");
+            if (!productData) {
+                throw new Error("productData là bắt buộc");
             }
+
+            // Validate files
+            if (files && files.length > 0) {
+                for (const file of files) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        throw new Error(`Hình ảnh ${file.name} vượt quá giới hạn 5MB`);
+                    }
+                    if (!file.type.startsWith("image/")) {
+                        throw new Error(`Hình ảnh ${file.name} không phải định dạng ảnh hợp lệ`);
+                    }
+                }
+            }
+
             const formData = new FormData();
             formData.append("request", new Blob([JSON.stringify(productData)], { type: "application/json" }));
-            formData.append("file", file);
+            if (files && files.length > 0) {
+                files.forEach((file) => {
+                    formData.append("files", file); // Use 'files' to match backend
+                    console.log(`Đang thêm file: ${file.name}, kích thước: ${file.size}, loại: ${file.type}`);
+                });
+            }
 
-            const response = await this.api.post("/", formData, {
+            console.log("Gửi yêu cầu tạo sản phẩm:", { productData, fileCount: files?.length || 0 });
+            const response = await this.api.post("", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            console.log("Create Product Response:", response);
+            console.log("Phản hồi tạo sản phẩm:", response);
             if (response.status === 200 || response.status === 201) {
                 toast.success("Tạo sản phẩm thành công", { position: "top-right" });
                 const product = response.data.data;
                 return product || null;
             } else {
-                console.error("API Error:", response.data);
-                toast.error(response.data.message || "Không tạo được sản phẩm", {
-                    position: "top-right",
-                });
-                return null;
+                console.error("Lỗi API:", response.data);
+                throw new Error(response.data.message || "Không tạo được sản phẩm");
             }
         } catch (error) {
-            console.error("Create Product Failed:", error.response?.data || error);
+            console.error("Tạo sản phẩm thất bại:", error.response?.data || error);
+            let errorMessage = "Lỗi khi tạo sản phẩm";
+            if (error.message.includes("vượt quá giới hạn 5MB")) {
+                errorMessage = error.message;
+            } else if (error.message.includes("không phải định dạng ảnh hợp lệ")) {
+                errorMessage = error.message;
+            } else if (error.response?.status === 400) {
+                errorMessage += `: ${error.response.data.message || "Dữ liệu không hợp lệ hoặc file không đúng định dạng"}`;
+            } else {
+                errorMessage += `: ${error.response?.data?.message || error.message}`;
+            }
+            toast.error(errorMessage, { position: "top-right" });
             return null;
         }
     }
 
-    async updateProduct(id, { productData, file }) {
+    async updateProduct(id, { productData, files }) {
         try {
             if (!productData) {
-                throw new Error("productData is required");
+                throw new Error("productData là bắt buộc");
             }
+            if (!id) {
+                throw new Error("ID sản phẩm là bắt buộc");
+            }
+
+            // Validate files
+            if (files && files.length > 0) {
+                for (const file of files) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        throw new Error(`Hình ảnh ${file.name} vượt quá giới hạn 5MB`);
+                    }
+                    if (!file.type.startsWith("image/")) {
+                        throw new Error(`Hình ảnh ${file.name} không phải định dạng ảnh hợp lệ`);
+                    }
+                }
+            }
+
             const formData = new FormData();
             formData.append("request", new Blob([JSON.stringify(productData)], { type: "application/json" }));
-            if (file) {
-                formData.append("file", file);
+            if (files && files.length > 0) {
+                files.forEach((file) => {
+                    formData.append("files", file);
+                });
             }
 
             const response = await this.api.put(`/${id}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            console.log("Update Product Response:", response);
+            console.log("Phản hồi cập nhật sản phẩm:", response);
             if (response.status === 200) {
                 toast.success("Cập nhật sản phẩm thành công", { position: "top-right" });
                 const product = response.data.data;
                 return product || null;
             } else {
-                console.error("API Error:", response.data);
-                toast.error(response.data.message || "Không cập nhật được sản phẩm", {
-                    position: "top-right",
-                });
-                return null;
+                console.error("Lỗi API:", response.data);
+                throw new Error(response.data.message || "Không cập nhật được sản phẩm");
             }
         } catch (error) {
-            console.error("Update Product Failed:", error.response?.data || error);
+            console.error("Cập nhật sản phẩm thất bại:", error.response?.data || error);
+            let errorMessage = "Lỗi khi cập nhật sản phẩm";
+            if (error.message.includes("vượt quá giới hạn 5MB")) {
+                errorMessage = error.message;
+            } else if (error.message.includes("không phải định dạng ảnh hợp lệ")) {
+                errorMessage = error.message;
+            } else if (error.response?.status === 400) {
+                errorMessage += `: ${error.response.data.message || "Dữ liệu không hợp lệ hoặc file không đúng định dạng"}`;
+            } else {
+                errorMessage += `: ${error.response?.data?.message || error.message}`;
+            }
+            toast.error(errorMessage, { position: "top-right" });
             return null;
         }
     }
@@ -198,8 +249,6 @@ class ProductService {
             return false;
         }
     }
-
-
 }
 
 export default ProductService;

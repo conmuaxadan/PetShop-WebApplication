@@ -73,6 +73,7 @@ const App = () => {
 
         // Fetch top products and customers
         const topProductsData = await revenueService.getTopProductsByRevenue(selectedTimeframe, 5);
+        console.log(topProducts)
         setTopProducts(topProductsData);
 
         const topCustomersData = await revenueService.getTopCustomersByValue(selectedTimeframe, 5);
@@ -467,7 +468,7 @@ const App = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              {/* Phân tích Sản phẩm */}
+              {/*/!* Phân tích Sản phẩm *!/*/}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Phân tích sản phẩm</h2>
